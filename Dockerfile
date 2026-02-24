@@ -122,3 +122,14 @@ RUN set -eux; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*; \
     docker --version
+
+# Gomplate
+RUN set -eu; \
+    ARCH=$(uname -m); \
+    if [ "${ARCH}" = x86_64 ]; then ARCH=amd64; fi; \
+    if [ "${ARCH}" = aarch64 ]; then ARCH=arm64; fi; \
+    if [ "${ARCH}" = armv7l ]; then ARCH=armv7; fi; \
+    curl -sL -o /usr/local/bin/gomplate \
+        https://github.com/hairyhenderson/gomplate/releases/latest/download/gomplate_linux-${ARCH}; \
+    chmod 755 /usr/local/bin/gomplate; \
+    gomplate --version

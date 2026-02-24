@@ -1,7 +1,7 @@
 name: build
 on:
   push:
-    branches: [ "master" ]
+    branches: [ "main" ]
     paths-ignore: [ "*.md" ]
   workflow_dispatch:
   schedule:
@@ -30,11 +30,27 @@ jobs:
           username: ${{ vars.CONTAINER_REGISTRY_USERNAME || github.actor }}
           password: ${{ secrets.CONTAINER_REGISTRY_TOKEN || github.token }}
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
+          cache-from: type=registry,ref=${{ env.CONTAINER_REGISTRY }}/${{ vars.CONTAINER_REPOSITORY || github.repository }}:buildcache
+          cache-to: type=registry,ref=${{ env.CONTAINER_REGISTRY }}/${{ vars.CONTAINER_REPOSITORY || github.repository }}:buildcache,mode=max
           push: true
           pull: true
           tags: |
             ${{ env.CONTAINER_REGISTRY }}/${{ vars.CONTAINER_REPOSITORY || github.repository }}:latest
-            ${{ env.CONTAINER_REGISTRY }}/${{ vars.CONTAINER_REPOSITORY || github.repository }}:${{ github.sha }}
+          # ${{ env.CONTAINER_REGISTRY }}/${{ vars.CONTAINER_REPOSITORY || github.repository }}:${{ github.sha }}
+
+      # - name: Cleanup old images
+      #   if: env.CONTAINER_REGISTRY == 'ghcr.io'
+      #   uses: actions/delete-package-versions@v5
+      #   with:
+      #     package-name: ${{ vars.CONTAINER_REPOSITORY || github.repository }}
+      #     package-type: container
+      #     token: ${{ secrets.CONTAINER_REGISTRY_TOKEN || github.token }}
+      #     min-versions-to-keep: 2
+      #     ignore-versions: latest
+      #     delete-only-untagged-versions: false
