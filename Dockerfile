@@ -16,6 +16,8 @@ RUN set -eu; \
         git \
         curl \
         wget \
+        restic \
+        rclone \
         openssh-client \
         rsync \
         zip \
@@ -29,8 +31,17 @@ RUN set -eu; \
     apt-get clean; \
     rm -rf /var/lib/apt/lists/*
 
+# Git
+RUN set -eu sudo add-apt-repository -y ppa:git-core/ppa; \
+    apt-get update; \
+    apt-get install -y --no-install-recommends git; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*; \
+    git --version
+
+
 # Node LTS
-RUN set -exu; \
+RUN set -eu; \
     ARCH=$(uname -m); \
     if [ "${ARCH}" = "x86_64" ]; then ARCH=x64; fi; \
     if [ "${ARCH}" = "aarch64" ]; then ARCH=arm64; fi; \
@@ -70,8 +81,19 @@ COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /usr/local/bin/
 RUN set -eu; \
     which uv; \
     uv self version; \
-    uv python install 3; \
-    uv python list
+    uv python install 3
+
+# Ansible
+RUN set -eu; \
+    add-apt-repository -y ppa:ansible/ansible; \
+    apt-get update ;\
+    apt-get install -y --no-install-recommends ansible ansible-lint; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*; \
+    ansible --version; \
+    ansible-galaxy --version; \
+    ansible-lint --version; \
+    ansible-playbook --version
 
 # Powershell
 RUN set -eu; \
@@ -133,3 +155,13 @@ RUN set -eu; \
         https://github.com/hairyhenderson/gomplate/releases/latest/download/gomplate_linux-${ARCH}; \
     chmod 755 /usr/local/bin/gomplate; \
     gomplate --version
+
+# Minio client
+RUN set -eu; \
+    ARCH=$(uname -m); \
+    if [ "${ARCH}" = x86_64 ]; then ARCH=amd64; fi; \
+    if [ "${ARCH}" = aarch64 ]; then ARCH=arm64; fi; \
+    if [ "${ARCH}" = armv7l ]; then ARCH=armhf; fi; \
+    curl -sL -o /usr/local/bin/mc "https://dl.min.io/client/mc/release/linux-${ARCH}/mc"; \
+    chmod +x /usr/local/bin/mc; \
+    mc --version
